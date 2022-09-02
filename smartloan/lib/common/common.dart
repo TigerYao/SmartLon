@@ -1,0 +1,1 @@
+export 'package:smartloan/common/router/router_config.dart';
