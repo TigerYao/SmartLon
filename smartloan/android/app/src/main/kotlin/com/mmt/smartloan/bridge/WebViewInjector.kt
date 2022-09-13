@@ -17,6 +17,7 @@ import android.webkit.ValueCallback
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import com.appsflyer.AppsFlyerLib
 import com.blankj.utilcode.util.GsonUtils
 import com.mmt.smartloan.plugin.SmartloanPlugin
 import com.mmt.smartloan.utils.DeviceUtils
@@ -39,6 +40,7 @@ class WebViewInjector(private val jsBridge: JsBridge, private val context: AppCo
 
     private var mFilePathCallback: ValueCallback<Array<Uri>>? = null
     private var imageUri: Uri? = null
+    private val logs = ArrayList<String>()
 
     @JavascriptInterface
     fun onShowFileChooser(filePathCallback: ValueCallback<Array<Uri>>?) {
@@ -92,12 +94,27 @@ class WebViewInjector(private val jsBridge: JsBridge, private val context: AppCo
             "getAccuauthSDK" -> getAccuauthSDK(jsMessage)
             "setNewToken" -> resetToken(jsMessage)
             "ToWhatsapp" -> jumpWhatsapp(jsMessage)
+            "logEventByAF" -> logEventAF(msg)
+            "logEventByLocal" -> logEventLocal(msg, jsMessage)
+        }
+    }
+
+    private fun logEventAF(msg: String){
+        AppsFlyerLib.getInstance().logEvent(context, msg, DeviceUtils.getInstance(context)?.getData())
+    }
+
+    private fun logEventLocal(msg: String, jsMessage: JSMessage){
+        var isUpload = jsMessage.data?.get("isUpload") as Boolean
+        if(isUpload){
+
+        }else{
+            logs.add(msg)
         }
     }
 
     private fun getLoginInfo(jsMessage: JSMessage) {
         jsMessage.result = "OK"
-        jsMessage.data = Data(SmartloanPlugin.getInstance()?.token)
+        jsMessage.data = mapOf("token" to SmartloanPlugin.getInstance()?.token)
         val callback = GsonUtils.toJson(jsMessage)
         jsBridge.loadUrl("javascript: ${jsMessage.callback} (${callback})")
     }
@@ -112,7 +129,7 @@ class WebViewInjector(private val jsBridge: JsBridge, private val context: AppCo
     private fun getVersionName(jsMessage: JSMessage) {
         jsMessage.result = "OK"
         val version = DeviceUtils.getInstance(context)?.getData()?.get("versionName")
-        jsMessage.data = { "versionName" to version }
+        jsMessage.data = mapOf("versionName" to version )
         val callback = GsonUtils.toJson(jsMessage)
         jsBridge.loadUrl("javascript: ${jsMessage.callback} (${callback})")
     }
@@ -196,9 +213,9 @@ class WebViewInjector(private val jsBridge: JsBridge, private val context: AppCo
             } else {
                 result = "fail"
                 msg = LivenessResult.getErrorMsg()
-                data = {
+                data = mapOf(
                     "errorMsg" to LivenessResult.getErrorMsg()
-                }
+                )
             }
             val callback = GsonUtils.toJson(this)
             jsBridge.loadUrl("javascript: ${this.callback} (${callback})")

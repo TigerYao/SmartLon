@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
@@ -8,17 +9,10 @@ bool isEmptyText(String? str) {
 }
 
 extension StringExtension on String {
-  // Size calculateSize(double fontSize,
-  //     {double minWidth = 0.0, double maxWidth = double.infinity}) {
-  //   final TextSpan span =
-  //       TextSpan(text: this, style: TextStyle(fontSize: fontSize));
-  //   final TextPainter textPainter = TextPainter(
-  //       text: span,
-  //       textAlign: TextAlign.left,
-  //       textDirection: TextDirection.LTR);
-  //   textPainter.layout(minWidth: minWidth, maxWidth: maxWidth);
-  //   return textPainter.size;
-  // }
+
+  int toInt(){
+    return Decimal.parse(this).toInt();
+  }
 
   ///每n位加一个分隔符
   TextEditingValue addSeparator(int gap, {String separator = " "}) {

@@ -104,6 +104,13 @@ class JsBridge(private val context: AppCompatActivity, private val webView: WebV
         webView.evaluateJavascript(jsMethod, callback);
     }
 
+    fun clearHistory(){
+        webView.clearHistory()
+        webView.clearCache(true)
+        webView.clearFormData()
+        loadUrl(mMainLoadUrl)
+    }
+
     fun destroy() {
         val parentView = webView.rootView as ViewGroup
         parentView.removeView(webView)

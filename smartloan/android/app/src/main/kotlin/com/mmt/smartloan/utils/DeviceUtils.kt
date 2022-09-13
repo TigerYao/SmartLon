@@ -38,7 +38,7 @@ class DeviceUtils() {
             "appName" to "SmartLoan",
             "channelId" to "SmartLoan",
             "imei" to getIMEI(),
-            "versionCode" to versionCode,
+            "versionCode" to BuildConfig.VERSION_CODE,
             "installReferce" to GoogleReferrerHelper.ins?.args?.get("installReferce")
         );
     }
@@ -52,6 +52,8 @@ class DeviceUtils() {
                     .getPackageInfo(activity.packageName, 0).versionCode
             } catch (e: PackageManager.NameNotFoundException) {
                 e.printStackTrace()
+
+                versionCode = BuildConfig.VERSION_CODE
             }
             return versionCode
         }
