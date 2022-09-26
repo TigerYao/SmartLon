@@ -35,7 +35,7 @@ class HomeController extends GetxController with StateMixin {
       switch (call.method) {
         case "onTimeFileCallBack":
           var args = call.arguments as Map<dynamic, dynamic>;
-          if (args['result']) {
+          if (args['isSubmit']) {
             uploadFile(args['md5'], args['file'], args['orderNo']);
           }
           break;
@@ -52,9 +52,7 @@ class HomeController extends GetxController with StateMixin {
 
   void jumpPage() {
     if (isLogin()) {
-      channel
-          .invokeMethod("loginSuccess", {"token": storageBox.read(keyToken)});
-      startWebActivity('http://8.134.38.88:3003');
+      startMainWebActivity();
     } else if (isAccept.isTrue) {
       Get.toNamed(AppRouters.signIn);
     } else {
@@ -82,8 +80,19 @@ class HomeController extends GetxController with StateMixin {
     channel.invokeMethod('collectMessage', json.encode(data));
   }
 
-  void startWebActivity(url) {
-    channel.invokeMethod('startWebActivity', {"url": url});
+  Future startWebActivity(url) {
+    return channel.invokeMethod('startWebActivity', {"url": url});
+  }
+
+  void startMainWebActivity({String? token}) {
+    channel.invokeMethod("loginSuccess",
+        {"token": token ?? storageBox.read(keyToken)}).then((value) {
+      startWebActivity('http://8.134.38.88:3003').then((value) {
+        if (value == "ok") {
+          Future.delayed(const Duration(seconds: 2), () => updateVersion());
+        }
+      });
+    });
   }
 
   void getDeviceInfo() {
@@ -91,6 +100,8 @@ class HomeController extends GetxController with StateMixin {
       deviceInfo = value;
       baseProvider.setHeader(deviceInfo?['afid']);
       storageBox.write("deviceInfo", deviceInfo);
+      String? token = storageBox.read(keyToken);
+      if(token != null) baseProvider.setToken(token);
       uploadDeviceInfo();
     });
   }
@@ -108,7 +119,7 @@ class HomeController extends GetxController with StateMixin {
     baseProvider.httpClient
         .post("user/device/addActive", body: jsonEncode(body))
         .then((value) {
-      updateVersion();
+      jumpPage();
     });
   }
 
@@ -118,13 +129,9 @@ class HomeController extends GetxController with StateMixin {
       var data = value.body['data'];
       var code = deviceInfo?['versionCode'];
       if (code != null && data['versionCode'].toString().toInt() > code) {
-        updateDialog(data);
-      } else {
-        jumpPage();
+        channel.invokeMethod("showUpdateDialog", json.encode(data));
       }
-    }, onError: (err) {
-      jumpPage();
-    });
+    }, onError: (err) {});
   }
 
   void uploadFile(String md5, String filePath, String orderNo) {
@@ -133,15 +140,20 @@ class HomeController extends GetxController with StateMixin {
       "orderNo": orderNo,
       "file": MultipartFile(File(filePath), filename: filePath.split("/").last)
     };
-    baseProvider
-        .post('/time/upload/zip6in1', FormData(params))
-        .then((value) {}, onError: (err) {});
+
+    baseProvider.post('/time/upload/zip6in1', FormData(params)).then((value) {
+      print("callFlutter value =ok= ${value.hasError}");
+      channel.invokeMethod('onTimeUpload', true);
+    }, onError: (err) {
+      print("callFlutter value == ${err.toString()}");
+      channel.invokeMethod('onTimeUpload', false);
+    });
   }
 
   void updateDialog(dynamic data) {
     var forced = data['forcedUpdate'];
     Widget dialogUpdate = Container(
-      color: Colors.grey,
+      color: Colors.transparent,
       alignment: Alignment.center,
       padding: EdgeInsets.symmetric(horizontal: 40.pt),
       child: Column(

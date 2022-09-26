@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
 import androidx.appcompat.app.AppCompatActivity
+import com.mmt.smartloan.utils.DeviceUtils
 import com.mmt.smartloan.utils.TimeSDKHelp
 
 /**
@@ -21,26 +22,12 @@ import com.mmt.smartloan.utils.TimeSDKHelp
 class JsBridge(private val context: AppCompatActivity, private val webView: WebView) :
     WebViewClient() {
 
-    companion object {}
-
-    private lateinit var mMainLoadUrl: String
+    private var mMainLoadUrl: String? = null
+     val mainUrl = "http://8.134.38.88:3003"
     private val jsInjector: WebViewInjector = WebViewInjector(this, context)
 
     init {
         setting()
-        jsInjector.permission.requestEachCombined(
-            Manifest.permission.READ_CONTACTS,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.READ_SMS,
-            "android.permission.READ_PRIVILEGED_PHONE_STATE",
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.CAMERA
-        ).subscribe({
-            Log.i("permissin", "${it.granted}")
-        }) {
-
-        }
     }
 
     @SuppressLint("JavascriptInterface")
@@ -78,7 +65,7 @@ class JsBridge(private val context: AppCompatActivity, private val webView: WebV
         webSettings.setAllowFileAccessFromFileURLs(true);
         webView.webViewClient = this
         webView.addJavascriptInterface(jsInjector, "FKSDKJsFramework")
-        webView.webChromeClient = object: WebChromeClient(){
+        webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
                 webView: WebView?,
                 filePathCallback: ValueCallback<Array<Uri>>?,
@@ -93,10 +80,49 @@ class JsBridge(private val context: AppCompatActivity, private val webView: WebV
     fun loadUrl(url: String?) {
         webView.post {
             url?.apply {
-                mMainLoadUrl = url
+                if(mMainLoadUrl == null) mMainLoadUrl = url
                 webView.loadUrl(url)
             }
         }
+    }
+
+    val hasUrl = listOf(
+        "id_card_authentication",
+        "emergency_contacts",
+        "personal_infomation",
+        "review_tips",
+        "add_bankcard",
+        "confirm_borrow",
+        "additionalInfomation"
+    )
+
+    fun goBack():Boolean{
+        if(mMainLoadUrl == mainUrl) {
+            val viewUrl = webView.url
+            viewUrl?.apply {
+                val str = hasUrl.firstOrNull {
+                    contains(it)
+                }
+                if (str != null) {
+                    loadUrl(mMainLoadUrl)
+                    return true
+                }
+                val value = this.replace("/#/", "")
+                if (value == mainUrl) {
+                    DeviceUtils.finishAll()
+                    return false
+                }
+            }
+
+            if (webView.canGoBack()) {
+                webView.goBack()
+                return true
+            } else {
+                DeviceUtils.finishAll()
+                return false
+            }
+        }
+        return false
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -104,7 +130,7 @@ class JsBridge(private val context: AppCompatActivity, private val webView: WebV
         webView.evaluateJavascript(jsMethod, callback);
     }
 
-    fun clearHistory(){
+    fun clearHistory() {
         webView.clearHistory()
         webView.clearCache(true)
         webView.clearFormData()
@@ -138,7 +164,7 @@ class JsBridge(private val context: AppCompatActivity, private val webView: WebV
             data?.data?.let { jsInjector.onContractSelected(it) }
         } else if (requestCode == WebViewInjector.LIVE_NESS) {
             jsInjector.onLiveNessBack(resultCode == Activity.RESULT_OK)
-        } else if (requestCode == WebViewInjector.CAMERA_PICK){
+        } else if (requestCode == WebViewInjector.CAMERA_PICK) {
             jsInjector.onCameraResult()
         }
     }

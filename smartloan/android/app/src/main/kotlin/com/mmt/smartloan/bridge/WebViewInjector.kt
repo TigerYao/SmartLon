@@ -16,14 +16,13 @@ import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import com.appsflyer.AppsFlyerLib
 import com.blankj.utilcode.util.GsonUtils
 import com.mmt.smartloan.plugin.SmartloanPlugin
-import com.mmt.smartloan.utils.DeviceUtils
-import com.mmt.smartloan.utils.TimeSDKHelp
-import com.mmt.smartloan.utils.bitmapToBase64
-import com.mmt.smartloan.utils.convertToThumb
+import com.mmt.smartloan.utils.*
 import com.tbruyelle.rxpermissions3.RxPermissions
 import java.io.File
 
@@ -45,8 +44,9 @@ class WebViewInjector(private val jsBridge: JsBridge, private val context: AppCo
     @JavascriptInterface
     fun onShowFileChooser(filePathCallback: ValueCallback<Array<Uri>>?) {
         mFilePathCallback = filePathCallback;
-        permission.requestEach(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        permission.requestEachCombined(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.CAMERA
         )
             .subscribe({
                 Log.i("jsMessage", "onShowFileChooser")
@@ -69,7 +69,7 @@ class WebViewInjector(private val jsBridge: JsBridge, private val context: AppCo
                 } else {
                     Toast.makeText(
                         context.applicationContext,
-                        "Autoriza el permiso a la cámara antes de fotografiar",
+                        "Autorice los permisos antes de entregar la solicitud",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -99,15 +99,16 @@ class WebViewInjector(private val jsBridge: JsBridge, private val context: AppCo
         }
     }
 
-    private fun logEventAF(msg: String){
-        AppsFlyerLib.getInstance().logEvent(context, msg, DeviceUtils.getInstance(context)?.getData())
+    private fun logEventAF(msg: String) {
+        AppsFlyerLib.getInstance()
+            .logEvent(context, msg, DeviceUtils.getInstance(context)?.getData())
     }
 
-    private fun logEventLocal(msg: String, jsMessage: JSMessage){
+    private fun logEventLocal(msg: String, jsMessage: JSMessage) {
         var isUpload = jsMessage.data?.get("isUpload") as Boolean
-        if(isUpload){
+        if (isUpload) {
 
-        }else{
+        } else {
             logs.add(msg)
         }
     }
@@ -128,9 +129,10 @@ class WebViewInjector(private val jsBridge: JsBridge, private val context: AppCo
 
     private fun getVersionName(jsMessage: JSMessage) {
         jsMessage.result = "OK"
-        val version = DeviceUtils.getInstance(context)?.getData()?.get("versionName")
-        jsMessage.data = mapOf("versionName" to version )
+        val version = DeviceUtils.getInstance(context)?.getData()?.get("appVersion")
+        jsMessage.data = mapOf("versionName" to version)
         val callback = GsonUtils.toJson(jsMessage)
+        Log.i("jsmessage", "getVersionName==$callback")
         jsBridge.loadUrl("javascript: ${jsMessage.callback} (${callback})")
     }
 
@@ -146,11 +148,12 @@ class WebViewInjector(private val jsBridge: JsBridge, private val context: AppCo
         timeSdkJSMessage = jsMessage
         context.runOnUiThread {
             TimeSDKHelp.getInstance().setResultCallback(::timeSDkCallback)
-            permission.requestEach(Manifest.permission.WRITE_EXTERNAL_STORAGE).subscribe {
-             if(it.granted){
-                 TimeSDKHelp.getInstance().collectMessage(GsonUtils.toJson(jsMessage))
-             }
-            }
+            TimeSDKHelp.getInstance().collectMessage(GsonUtils.toJson(jsMessage))
+//            permission.requestEach(Manifest.permission.WRITE_EXTERNAL_STORAGE).subscribe {
+//             if(it.granted){
+//
+//             }
+//            }
         }
     }
 
@@ -176,12 +179,18 @@ class WebViewInjector(private val jsBridge: JsBridge, private val context: AppCo
         contractMessage = jsMessage
         context.runOnUiThread {
             Log.i("seletcontact", "startContect")
-            permission.request(Manifest.permission.READ_CONTACTS)
+            permission.requestEach(Manifest.permission.READ_CONTACTS)
                 .subscribe {
-                    if (it) {
+                    if (it.granted) {
                         val intent =
                             Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
                         context.startActivityForResult(intent, SelectContract)
+                    } else if (!it.shouldShowRequestPermissionRationale) {
+                        Toast.makeText(
+                            context.applicationContext,
+                            "Autorice los permisos antes de entregar la solicitud",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
         }
@@ -190,9 +199,15 @@ class WebViewInjector(private val jsBridge: JsBridge, private val context: AppCo
 
     private var cameraMessage: JSMessage? = null
     private fun getAccuauthSDK(cameraJSMessage: JSMessage) {
-        cameraMessage = cameraJSMessage
-        val intent = Intent(context, LivenessActivity::class.java)
-        context.startActivityForResult(intent, LIVE_NESS)
+        permission.requestEach(
+            Manifest.permission.CAMERA
+        ).subscribe {
+            if (it.granted) {
+                cameraMessage = cameraJSMessage
+                val intent = Intent(context, LivenessActivity::class.java)
+                context.startActivityForResult(intent, LIVE_NESS)
+            }
+        }
     }
 
     private fun jumpWhatsapp(jsMessage: JSMessage) {
@@ -282,10 +297,16 @@ class WebViewInjector(private val jsBridge: JsBridge, private val context: AppCo
     }
 
     fun onCameraResult() {
-        mFilePathCallback?.apply {
-            val value = imageUri ?: Uri.EMPTY
-            this.onReceiveValue(arrayOf(value))
+        val absolutePath = context.getExternalFilesDir(DIRECTORY_PICTURES)
+        val file =
+            File.createTempFile("${System.currentTimeMillis()}", ".png", absolutePath)
+        imageUri.toBitmap(context).convertToThumb().saveToFile(file) {
+            val value = if (it) file.toUri() else Uri.EMPTY
+            mFilePathCallback?.apply {
+                this.onReceiveValue(arrayOf(value))
+            }
         }
+
     }
 
 }

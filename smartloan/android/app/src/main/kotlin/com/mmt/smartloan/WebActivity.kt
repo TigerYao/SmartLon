@@ -2,12 +2,12 @@ package com.mmt.smartloan
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.KeyEvent
-import android.view.Window
+import android.view.*
 import android.webkit.WebView
-import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import com.mmt.smartloan.bridge.JsBridge
+import com.mmt.smartloan.utils.DeviceUtils
 import com.mmt.smartloan.utils.DraggingButton
 import com.mmt.smartloan.utils.TimeSDKHelp
 
@@ -16,6 +16,7 @@ class WebActivity : AppCompatActivity() {
     private lateinit var jsBridge: JsBridge
     private lateinit var dragBtn: DraggingButton
     override fun onCreate(savedInstanceState: Bundle?) {
+        DeviceUtils.addActivity(this)
         super.onCreate(savedInstanceState)
         // 无title
         requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -34,6 +35,7 @@ class WebActivity : AppCompatActivity() {
         dragBtn.setOnClickListener {
             jsBridge.clearHistory()
         }
+        dragBtn.isVisible = pageUrl == jsBridge.mainUrl
     }
 
     override fun onResume() {
@@ -49,13 +51,18 @@ class WebActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         jsBridge.destroy()
+        DeviceUtils.removeActivity(this)
     }
 
+
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if(keyCode == KeyEvent.KEYCODE_BACK){
-            if(webview.canGoBack()){
-                webview.goBack()
-                return true;
+        if(dragBtn.isVisible) {
+            if (keyCode == KeyEvent.KEYCODE_BACK && jsBridge.goBack()) {
+                return true
+            }
+            if ((keyCode == KeyEvent.KEYCODE_BACK) && (event?.repeatCount == 0)) {
+                return false
             }
         }
         return super.onKeyDown(keyCode, event)
@@ -75,9 +82,14 @@ class WebActivity : AppCompatActivity() {
         TimeSDKHelp.getInstance().onRequestPermission()
     }
 
-    override fun finish() {
-        super.finish()
-//        System.exit(0)
+    override fun onBackPressed() {
+        if(dragBtn.isVisible) {
+            jsBridge.goBack()
+        }else if(webview.canGoBack()){
+            webview.goBack()
+        }else{
+            super.onBackPressed()
+        }
     }
 
 }

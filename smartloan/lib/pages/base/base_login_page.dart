@@ -18,6 +18,7 @@ abstract class BaseLoginPage extends GetView<LoginController> {
       body: Stack(
         children: [
           Container(
+            width: double.infinity,
             height: double.infinity,
             decoration: const BoxDecoration(color: Colors.white),
             child: Image.asset(
@@ -176,50 +177,45 @@ abstract class BaseLoginPage extends GetView<LoginController> {
                 )),
           ),
           Expanded(
-            child: GestureDetector(
-              onTap: () {
-                controller.isChecked.value = controller.isChecked.isFalse;
-              },
-              child: Text.rich(
-                TextSpan(
-                  text: 'AI continuar,acepta nuestros﹤',
-                  style: TextStyle(
-                      color: const Color(0xff242B57),
-                      fontSize: 11.pt,
-                      fontWeight: FontWeight.normal),
-                  children: [
-                    TextSpan(
-                        text: 'Terminos de Servicin',
-                        style: TextStyle(
-                            color: const Color(0xff242B57),
-                            fontSize: 11.pt,
-                            fontWeight: FontWeight.bold),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = controller.openService),
-                    TextSpan(
-                      text: '﹥,﹤',
+            child:Text.rich(
+              TextSpan(
+                text: 'AI continuar,acepta nuestros﹤',
+                style: TextStyle(
+                    color: const Color(0xff242B57),
+                    fontSize: 11.pt,
+                    fontWeight: FontWeight.normal),
+                children: [
+                  TextSpan(
+                      text: 'Terminos de Servicin',
                       style: TextStyle(
                           color: const Color(0xff242B57),
                           fontSize: 11.pt,
-                          fontWeight: FontWeight.normal),
-                    ),
-                    TextSpan(
-                        text: 'Politica de privacidad',
-                        style: TextStyle(
-                            color: const Color(0xff242B57),
-                            fontSize: 11.pt,
-                            fontWeight: FontWeight.bold),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = controller.openProvicyService),
-                    TextSpan(
-                      text: '﹥y recibe avisos por SMS y correo electronico.',
+                          fontWeight: FontWeight.bold),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = controller.openService),
+                  TextSpan(
+                    text: '﹥,﹤',
+                    style: TextStyle(
+                        color: const Color(0xff242B57),
+                        fontSize: 11.pt,
+                        fontWeight: FontWeight.normal),
+                  ),
+                  TextSpan(
+                      text: 'Politica de privacidad',
                       style: TextStyle(
                           color: const Color(0xff242B57),
                           fontSize: 11.pt,
-                          fontWeight: FontWeight.normal),
-                    ),
-                  ],
-                ),
+                          fontWeight: FontWeight.bold),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = controller.openProvicyService),
+                  TextSpan(
+                    text: '﹥y recibe avisos por SMS y correo electronico.',
+                    style: TextStyle(
+                        color: const Color(0xff242B57),
+                        fontSize: 11.pt,
+                        fontWeight: FontWeight.normal),
+                  ),
+                ],
               ),
             ),
           )

@@ -66,19 +66,17 @@ class LoginController extends GetxController {
     }
   }
 
-  void startCountDown(int time) {
-    if (_timer == null || !_timer!.isActive) {
-      _startCountDown(time);
-    }
-  }
+  // void startCountDown(int time) {
+  //   if (_timer == null || !_timer!.isActive) {
+  //     _startCountDown(time);
+  //   }
+  // }
 
   void _startCountDown(int time) {
     // 重新计时的时候要把之前的清除掉
     if (_timer != null) {
-      if (_timer!.isActive) {
-        _timer!.cancel();
+        _timer?.cancel();
         _timer = null;
-      }
     }
     if (time <= 0) {
       return;
@@ -106,6 +104,8 @@ class LoginController extends GetxController {
       if (value.isOk && value.body['code'] == 0) {
         var isHas = value.body['data']['existed'] == true;
         type = isHas ? 1 : 2;
+        _timer?.cancel();
+        _timer = null;
         Get.toNamed(AppRouters.signUpCode);
         getVerifyCode();
       } else {
@@ -118,7 +118,8 @@ class LoginController extends GetxController {
   }
 
   void getVerifyCode({int notifyType = 1}) {
-    if (_timer != null) return;
+    if(_timer != null) return;
+    remainTimeStr.value = '60s';
     showLoading(true);
     homeController.baseProvider.post('security/getVerifyCode', {
       "mobile": mobileNumber,
@@ -128,7 +129,7 @@ class LoginController extends GetxController {
       "notifyType": notifyType
     }).then((value) {
       showLoading(false);
-      startCountDown(59);
+      _startCountDown(60);
     }, onError: (err) {
       showLoading(false);
     });
@@ -176,8 +177,9 @@ class LoginController extends GetxController {
         var token = data['data']['token'];
         homeController.storageBox.write(keyToken, token);
         homeController.storageBox.write('userId', data['data']['userId']);
+        homeController.baseProvider.setToken(token);
+        homeController.startMainWebActivity(token: token);
         Get.back();
-        homeController.channel.invokeMethod("loginSuccess", {"token": token}).then((value) =>  homeController.startWebActivity('http://8.134.38.88:3003'));
       } else {
         Fluttertoast.showToast(msg: data['msg']);
       }

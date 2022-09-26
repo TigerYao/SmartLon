@@ -7,7 +7,7 @@
     <string name="liveness_hold_phone_vertical">Please hold the phone upright </string>
     <string name="liveness_weak_light">Find a brighter place</string>
     <string name="liveness_too_light">Find a darker place</string>
-    <string name="liveness_no_camera_permission">Camera is not turned on, please turn on camera permissions</string>
+    <string name="liveness_no_camera_permission">Autorice los permisos antes de entregar la solicitud</string>
     <string name="liveness_perform">Yes</string>
     <string name="liveness_cancel">Cancel</string>
     <string name="liveness_try_again">Use again</string>

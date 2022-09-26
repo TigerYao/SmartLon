@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:smartloan/extension/foundation.dart';
 import 'package:smartloan/pages/base/base_login_page.dart';
 
+import '../../common/phone_gap_formatter.dart';
+
 class PhoneNumberPage extends BaseLoginPage {
   PhoneNumberPage({Key? key}) : super(key: key);
   final TextEditingController editingController = TextEditingController();
@@ -52,8 +54,7 @@ class PhoneNumberPage extends BaseLoginPage {
           LengthLimitingTextInputFormatter(12,
               maxLengthEnforcement: MaxLengthEnforcement.enforced),
           FilteringTextInputFormatter.digitsOnly,
-          TextInputFormatter.withFunction(
-              (oldValue, newValue) => newValue.text.addSeparator(3))
+          CreditCardFormatter()
         ],
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
@@ -92,7 +93,6 @@ class PhoneNumberPage extends BaseLoginPage {
       ),
     );
   }
-
   @override
   Widget createBody() {
     return createInput();

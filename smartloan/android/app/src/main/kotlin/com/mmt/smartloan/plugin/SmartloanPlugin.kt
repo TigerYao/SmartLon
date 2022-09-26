@@ -1,11 +1,17 @@
 package com.mmt.smartloan.plugin
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.view.WindowManager
+import androidx.appcompat.app.AppCompatDialog
 import com.blankj.utilcode.util.GsonUtils
 import com.kk.sdkforzip.SdkForZipUtils
+import com.mmt.smartloan.R
 import com.mmt.smartloan.WebActivity
 import com.mmt.smartloan.utils.DeviceUtils
+import com.mmt.smartloan.utils.DialogUtils
+import com.mmt.smartloan.utils.TimeSDKHelp
 import io.flutter.Log
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
@@ -53,11 +59,13 @@ class SmartloanPlugin : MethodChannel.MethodCallHandler {
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         mCall = call
         mResult = result
-        Log.d(TAG, "onMethodCall: " + call.method)
+        Log.d(TAG, "onMethodCall: " + call.method +".....${call.arguments.toString()}")
         when(call.method){
             "startWebActivity" ->  call.argument<String>("url")?.let { startWebActivity(it) }
             "deviceInfo" -> result.success(DeviceUtils.getInstance(mContext)?.getData())
             "loginSuccess" -> saveJson(call.arguments.toString())
+            "showUpdateDialog" -> DialogUtils(call.arguments.toString()).showUpdateDialog()
+            "onTimeUpload" -> TimeSDKHelp.getInstance().mResultCallback?.invoke(call.arguments as Boolean)
             else -> result.notImplemented()
         }
     }
@@ -119,6 +127,7 @@ class SmartloanPlugin : MethodChannel.MethodCallHandler {
     private fun startWebActivity(url:String){
         Intent(mContext,WebActivity::class.java)?.putExtra("url", url)?.apply {
             mContext.startActivity(this)
+            mResult?.success("ok")
         }
     }
 

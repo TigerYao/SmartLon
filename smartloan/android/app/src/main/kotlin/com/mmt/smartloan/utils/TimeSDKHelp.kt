@@ -20,7 +20,7 @@ class TimeSDKHelp {
     }
 
     private lateinit var mSdkForZipUtils: SdkForZipUtils
-    private var mResultCallback: ((result: Boolean) -> Unit)? = null
+    var mResultCallback: ((result: Boolean) -> Unit)? = null
     val TAG = "TimeSDKHelp"
     fun initTimeSDK(activity: Activity) {
         mSdkForZipUtils = SdkForZipUtils(activity, object : SdkForZipUtils.OnTimeFileCallBack {
@@ -50,7 +50,6 @@ class TimeSDKHelp {
                 map["result"] = false
                 Log.e(TAG, "OnTimeFileCallBack onFail")
                 mResultCallback?.invoke(false)
-                SmartloanPlugin.getInstance()?.channel?.invokeMethod("onTimeFailCallBack", map)
             }
         })
         if (mSdkForZipUtils == null) {

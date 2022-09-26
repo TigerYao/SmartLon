@@ -51,11 +51,9 @@ class PhoneCodePage extends BaseLoginPage {
         controller: codeController,
         autofocus: true,
         inputFormatters: [
-          LengthLimitingTextInputFormatter(7,
+          LengthLimitingTextInputFormatter(6,
               maxLengthEnforcement: MaxLengthEnforcement.enforced),
           FilteringTextInputFormatter.digitsOnly,
-          TextInputFormatter.withFunction(
-              (oldValue, newValue) => newValue.text.addSeparator(3))
         ],
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,

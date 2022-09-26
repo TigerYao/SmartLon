@@ -15,6 +15,7 @@ class DeviceUtils() {
     companion object {
         //获取软件版本号，对应AndroidManifest.xml下android:versionCode
         private lateinit var activity: Activity
+        val mActivitys = listOf<Activity>().toMutableList()
         @SuppressLint("StaticFieldLeak")
         var sInstance: DeviceUtils? = null
 
@@ -25,6 +26,19 @@ class DeviceUtils() {
             }
             this.activity = activity
             return sInstance
+        }
+
+        fun addActivity(activity: Activity){
+            mActivitys.add(activity)
+        }
+
+        fun removeActivity(activity: Activity){
+            mActivitys.remove(activity)
+        }
+        fun finishAll(){
+            mActivitys.map {
+                it.finish()
+            }
         }
     }
 
@@ -81,13 +95,13 @@ class DeviceUtils() {
         if((ContextCompat.checkSelfPermission(activity, "android.permission.READ_PRIVILEGED_PHONE_STATE") or ContextCompat.checkSelfPermission(activity, "android.permission.android.permission.READ_PHONE_STATE"))== PackageManager.PERMISSION_GRANTED) {
             val tm: TelephonyManager =
                 activity.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-            val deviceId: String = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val deviceId: String? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 tm.imei
             } else {
                 tm.deviceId
             }
-            return deviceId ?: "UnKnown"
+            return deviceId ?: "000000000000000"
         }
-        return null
+        return "000000000000000"
     }
 }
